@@ -145,6 +145,7 @@ def aesthetic_scorer(hub_model_id, model_filename):
     def _fn(images, prompts, metadata):
         images = (images * 255).round().clamp(0, 255).to(torch.uint8)
         scores = scorer(images)
+        print(scores)
         return scores, {}
 
     return _fn
@@ -195,7 +196,7 @@ def image_outputs_logger(image_data, global_step, accelerate_logger):
     for i, image in enumerate(images):
         prompt = prompts[i]
         reward = rewards[i].item()
-        result[f"{prompt:.25} | {reward:.2f}"] = image.unsqueeze(0).float()
+        result[f"{prompt:.25}__{reward:.2f}"] = image.unsqueeze(0).float()
 
     accelerate_logger.log_images(
         result,
@@ -211,6 +212,7 @@ if __name__ == "__main__":
         "automatic_checkpoint_naming": True,
         "total_limit": 5,
         "project_dir": "./save",
+        "seed": 2003,
     }
 
     pipeline = DefaultDDPOStableDiffusionPipeline(
