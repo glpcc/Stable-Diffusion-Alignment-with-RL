@@ -8,7 +8,7 @@ model_id = "HuggingFaceM4/idefics2-8b"
 quantization_config = QuantoConfig(weights="int8")
 processor = AutoProcessor.from_pretrained("google/gemma-3-4b-it")
 model = AutoModelForImageTextToText.from_pretrained("google/gemma-3-4b-it", device_map="cuda", quantization_config=quantization_config )
-checkpoint = 0
+checkpoint = 12
 testing_images_folder = "TestGeneration_checkpoint" + str(checkpoint)
 testing_images = os.listdir(testing_images_folder)
 final_results = {
