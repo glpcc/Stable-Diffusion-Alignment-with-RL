@@ -1,0 +1,9 @@
+diffusers
+huggingface_hub
+numpy
+Pillow
+torch
+transformers
+trl
+wandb
+peft

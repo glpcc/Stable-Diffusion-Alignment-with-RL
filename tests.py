@@ -39,6 +39,9 @@ from transformers import CLIPModel, CLIPProcessor, HfArgumentParser, is_torch_np
 from PIL import Image
 import json
 from trl import DDPOConfig, DDPOTrainer, DefaultDDPOStableDiffusionPipeline
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
@@ -53,16 +56,12 @@ class ScriptArguments:
             Pretrained model revision to use.
         hf_hub_model_id (`str`, *optional*, defaults to `"ddpo-finetuned-stable-diffusion"`):
             HuggingFace repo to save model weights to.
-        hf_hub_aesthetic_model_id (`str`, *optional*, defaults to `"trl-lib/ddpo-aesthetic-predictor"`):
-            Hugging Face model ID for aesthetic scorer model weights.
-        hf_hub_aesthetic_model_filename (`str`, *optional*, defaults to `"aesthetic-model.pth"`):
-            Hugging Face model filename for aesthetic scorer model weights.
         use_lora (`bool`, *optional*, defaults to `True`):
             Whether to use LoRA.
     """
 
     pretrained_model: str = field(
-        default="runwayml/stable-diffusion-v1-5", metadata={"help": "Pretrained model to use."}
+        default="stable-diffusion-v1-5/stable-diffusion-v1-5", metadata={"help": "Pretrained model to use."}
     )
     pretrained_revision: str = field(default="main", metadata={"help": "Pretrained model revision to use."})
     hf_hub_model_id: str = field(
@@ -110,14 +109,11 @@ class TextSimilarityScorer(torch.nn.Module):
         super().__init__()
         self.clip = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
-        # Calculate reference image features
-        reference_image = Image.open("reference_image.jpg")
-        inputs = self.processor(images=reference_image, return_tensors="pt")
-        inputs = {k: v.to(dtype) for k, v in inputs.items()}
         with open('features.json', 'r') as f:
             features = json.load(f)
             temp = torch.tensor(features['text_features'])
         self.reference_features = temp
+        self.dtype = dtype
 
     @torch.no_grad()
     def __call__(self, images):
@@ -130,10 +126,10 @@ class TextSimilarityScorer(torch.nn.Module):
         return torch.nn.functional.cosine_similarity(embed, self.reference_features, dim=-1)
 
 
-# similarity_scorer = TextSimilarityScorer(
-#     dtype=torch.float32)
-similarity_scorer = ImageSimilarityScorer(
+similarity_scorer = TextSimilarityScorer(
     dtype=torch.float32)
+# similarity_scorer = ImageSimilarityScorer(
+#     dtype=torch.float32)
 def scorer(images, prompts, model):
     scores = similarity_scorer(images)*10
     print(scores)
@@ -164,12 +160,13 @@ def image_outputs_logger(image_data, global_step, accelerate_logger):
     # For the sake of this example, we will only log the last batch of images
     # and associated data
     result = {}
-    images, prompts, _, rewards, _ = image_data[-1]
+    for data in image_data[-4:]:
+        images, prompts, _, rewards, _ = data
 
-    for i, image in enumerate(images):
-        prompt = prompts[i]
-        reward = rewards[i].item()
-        result[f"{prompt}__{reward:.5f}"] = image.unsqueeze(0).float()
+        for i, image in enumerate(images):
+            prompt = prompts[i]
+            reward = rewards[i].item()
+            result[f"{prompt}__{reward:.5f}"] = image.unsqueeze(0).float()
 
     accelerate_logger.log_images(
         result,
@@ -183,7 +180,7 @@ if __name__ == "__main__":
     training_args.project_kwargs = {
         "logging_dir": "./logs",
         "automatic_checkpoint_naming": True,
-        "total_limit": 5,
+        "total_limit": 500,
         "project_dir": "./save",
     }
 
@@ -192,7 +189,10 @@ if __name__ == "__main__":
         pretrained_model_revision=script_args.pretrained_revision,
         use_lora=script_args.use_lora,
     )
-
+    pipeline.sd_pipeline.load_lora_weights(
+                "save2/checkpoints/checkpoint_17/",
+                weight_name="pytorch_lora_weights.safetensors",
+            )
     trainer = DDPOTrainer(
         training_args,
         scorer,

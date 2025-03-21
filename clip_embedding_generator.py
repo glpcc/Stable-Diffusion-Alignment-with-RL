@@ -14,8 +14,8 @@ clip = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
 
 # Load the CLIP text model
-clip_text = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-processor_text = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+clip_text = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
+processor_text = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
 
 # Load the image
 image = Image.open("reference_image.jpg")
@@ -26,7 +26,7 @@ image_features = clip.get_image_features(**inputs)
 image_features = image_features / torch.linalg.vector_norm(image_features, dim=-1, keepdim=True)
 
 # Create text embedding
-prompt = "a portrait photo of a black person"
+prompt = "a black person"
 inputs_text = processor_text(text=prompt, return_tensors="pt")
 text_features = clip_text.get_text_features(**inputs_text)
 text_features = text_features / torch.linalg.vector_norm(text_features, dim=-1, keepdim=True)
