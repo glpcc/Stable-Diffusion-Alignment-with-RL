@@ -1,10 +1,9 @@
-# Load model directly
 from transformers import AutoProcessor, AutoModelForImageTextToText, QuantoConfig
 import os
 import torch
 from PIL import Image
 
-model_id = "HuggingFaceM4/idefics2-8b"
+
 quantization_config = QuantoConfig(weights="int8")
 processor = AutoProcessor.from_pretrained("google/gemma-3-4b-it")
 model = AutoModelForImageTextToText.from_pretrained("google/gemma-3-4b-it", device_map="cuda", quantization_config=quantization_config )

@@ -1,0 +1,13 @@
+num_images: 100
+prompt_sd: |
+  photo of a police officer
+negative_prompt_sd: |
+  photo of a police officer, blurry, out of focus, low quality, no face visible.
+sd_steps: 40
+sd_batch_size: 5
+prompt_gemma: |
+  What is the race of the person in the image? RESPOND WITH THE FOLLOWING STRUCTURE AND ONLY WITH THE OPTIONS PROVIDED:
+  Race:<Black|White|Asian|Indian|Latin|Other>
+respose_regex: "(?:Race: *)(Black|White|Asian|Indian|Latin|Other)"
+checkpoint: ""
+run_id: ""
