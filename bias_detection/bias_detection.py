@@ -6,15 +6,15 @@ import pathlib
 import pandas as pd
 import torch
 import yaml
-from diffusers import StableDiffusionPipeline
+from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import StableDiffusionPipeline
 from PIL import Image
 from transformers import (AutoModelForImageTextToText, AutoProcessor,
                           QuantoConfig)
 
 
 # Cargar Configuración de la ejecución
+folder = pathlib.Path(__file__).parent 
 config_file = pathlib.Path(__file__).parent / "bias_detection_config.yaml"
-config_file = str(config_file)
 with open(config_file, 'r') as file:
     config = yaml.safe_load(file)
 if config["run_id"] == "":
@@ -22,11 +22,15 @@ if config["run_id"] == "":
     config["run_id"] = run_id
 
 # Guardar la configuración de la ejecución
-os.makedirs("runs/" + run_id, exist_ok=True)
-with open(f"runs/{run_id}/config.yaml", 'w') as file:
+run_folder = folder / "runs" / run_id
+run_folder.mkdir(parents=True, exist_ok=True)
+config_path = run_folder / "config.yaml"
+with open(config_path, 'w') as file:
     yaml.dump(config, file)
+
 # Crear carpeta para las imágenes generadas
-os.makedirs("runs/" + run_id + "/images", exist_ok=True)
+images_folder = run_folder / "images"
+images_folder.mkdir(parents=True, exist_ok=True)
 
 # Cargar el modelo stable diffusion y el procesador
 model_id = "stable-diffusion-v1-5/stable-diffusion-v1-5"
@@ -37,23 +41,24 @@ if config["checkpoint"] != "":
 pipe = pipe.to("cuda")
 
 # Generar imágenes
-prompt = config["prompt"]
-negative_prompt = config["negative_prompt"]
-total_images = config["total_images"]
-batch_size = config["batch_size"]
-folder = "runs/" + run_id + "/images"
+prompt = config["prompt_sd"]
+negative_prompt = config["negative_prompt_sd"]
+total_images = config["num_images"]
+batch_size = config["sd_batch_size"]
 
 for i in range(0, total_images, batch_size):
     # Saltar si ya se generaron todas las imágenes
-    if all(os.path.exists(f"{folder}/image_{i+j}.png") for j in range(batch_size)):
+    if all((images_folder / f"image_{i+j}.png").exists() for j in range(batch_size)):
         continue
     images = pipe(
-        prompt = prompt,
-        negative_prompt = negative_prompt,
-        num_images_per_prompt = batch_size,
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        num_images_per_prompt=batch_size,
+        num_inference_steps=config["sd_steps"],
     )
     for j, image in enumerate(images.images):
-        image.save(f"{folder}/image_{i+j}.png")
+        image_path = images_folder / f"image_{i+j}.png"
+        image.save(image_path)
         print(f"Image {i+j} saved.")
 
 # Borrar el modelo de la GPU
@@ -62,18 +67,16 @@ del pipe
 # Cargar el modelo Gemma3 y quantizarlo
 quantization_config = QuantoConfig(weights="int8")
 processor = AutoProcessor.from_pretrained("google/gemma-3-4b-it")
-model = AutoModelForImageTextToText.from_pretrained("google/gemma-3-4b-it", device_map="cuda", quantization_config=quantization_config )
+model = AutoModelForImageTextToText.from_pretrained("google/gemma-3-4b-it", device_map="cuda", quantization_config=quantization_config)
 final_results = {
     "image": [],
-    "race": []
+    "result": []
 }
 # Cargar el regex para filtrar la respuesta
 pattern = re.compile(config['respose_regex'], re.IGNORECASE)
 # Procesar las imágenes generadas
-testing_images_folder = "runs/" + run_id + "/images"
-testing_images = os.listdir(testing_images_folder)
-for image in testing_images:
-    image_path = os.path.join(testing_images_folder, image)
+testing_images = list(images_folder.iterdir())
+for image_path in testing_images:
     image = Image.open(image_path)
     messages = [
         {
@@ -94,10 +97,11 @@ for image in testing_images:
     # Obtener la respuesta
     response = re.findall(pattern, generated_texts[0])[0]
     # Guardar la imagen y la respuesta
-    final_results["image"].append(image_path)
+    final_results["image"].append(str(image_path))
     final_results["result"].append(response)
     print(response)
 
 # Guardar los resultados en un archivo CSV
+results_path = run_folder / "Predicted.csv"
 df = pd.DataFrame(final_results)
-df.to_csv(f"runs/{run_id}/Predicted.csv", index=False)
+df.to_csv(results_path, index=False)

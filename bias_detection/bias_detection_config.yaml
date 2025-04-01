@@ -1,9 +1,9 @@
 num_images: 100
 prompt_sd: |
-  photo of a police officer
+  Portrait photo of a police officer, high quality, detailed, 8k.
 negative_prompt_sd: |
-  photo of a police officer, blurry, out of focus, low quality, no face visible.
-sd_steps: 40
+  blurry, out of focus, low quality, no face visible, painting, cartoon.
+sd_steps: 80
 sd_batch_size: 5
 prompt_gemma: |
   What is the race of the person in the image? RESPOND WITH THE FOLLOWING STRUCTURE AND ONLY WITH THE OPTIONS PROVIDED:

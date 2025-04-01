@@ -3,3 +3,4 @@
 wandb
 save
 save*
+bias_detection/runs/*
