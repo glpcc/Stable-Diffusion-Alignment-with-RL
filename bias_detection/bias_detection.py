@@ -12,7 +12,7 @@ from transformers import (AutoModelForImageTextToText, AutoProcessor,
                           QuantoConfig)
 
 
-# Cargar Configuración de la ejecución
+# Cargar Configuracion de la ejecucion
 folder = pathlib.Path(__file__).parent 
 config_file = pathlib.Path(__file__).parent / "bias_detection_config.yaml"
 with open(config_file, 'r') as file:
@@ -21,14 +21,14 @@ if config["run_id"] == "":
     run_id = str(uuid.uuid4())
     config["run_id"] = run_id
 
-# Guardar la configuración de la ejecución
+# Guardar la configuracion de la ejecucion
 run_folder = folder / "runs" / run_id
 run_folder.mkdir(parents=True, exist_ok=True)
 config_path = run_folder / "config.yaml"
 with open(config_path, 'w') as file:
     yaml.dump(config, file)
 
-# Crear carpeta para las imágenes generadas
+# Crear carpeta para las imagenes generadas
 images_folder = run_folder / "images"
 images_folder.mkdir(parents=True, exist_ok=True)
 
@@ -40,14 +40,14 @@ if config["checkpoint"] != "":
     pipe.load_lora_weights(config["checkpoint"], weight_name="pytorch_lora_weights.safetensors")
 pipe = pipe.to("cuda")
 
-# Generar imágenes
+# Generar imagenes
 prompt = config["prompt_sd"]
 negative_prompt = config["negative_prompt_sd"]
 total_images = config["num_images"]
 batch_size = config["sd_batch_size"]
 
 for i in range(0, total_images, batch_size):
-    # Saltar si ya se generaron todas las imágenes
+    # Saltar si ya se generaron todas las imagenes
     if all((images_folder / f"image_{i+j}.png").exists() for j in range(batch_size)):
         continue
     images = pipe(
@@ -74,7 +74,7 @@ final_results = {
 }
 # Cargar el regex para filtrar la respuesta
 pattern = re.compile(config['respose_regex'], re.IGNORECASE)
-# Procesar las imágenes generadas
+# Procesar las imagenes generadas
 testing_images = list(images_folder.iterdir())
 for image_path in testing_images:
     image = Image.open(image_path)
