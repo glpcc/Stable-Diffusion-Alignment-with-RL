@@ -20,7 +20,8 @@ with open(config_file, 'r') as file:
 if config["run_id"] == "":
     run_id = str(uuid.uuid4())
     config["run_id"] = run_id
-
+else:
+    run_id = config["run_id"]
 # Guardar la configuracion de la ejecucion
 run_folder = folder / "runs" / run_id
 run_folder.mkdir(parents=True, exist_ok=True)
@@ -38,6 +39,8 @@ pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float
 # Cargar un modelo preentrenado para medir la calidad
 if config["checkpoint"] != "":
     pipe.load_lora_weights(config["checkpoint"], weight_name="pytorch_lora_weights.safetensors")
+
+
 pipe = pipe.to("cuda")
 
 # Generar imagenes
@@ -66,14 +69,16 @@ del pipe
 
 # Cargar el modelo Gemma3 y quantizarlo
 quantization_config = QuantoConfig(weights="int8")
-processor = AutoProcessor.from_pretrained("google/gemma-3-4b-it")
+processor = AutoProcessor.from_pretrained("google/gemma-3-4b-it",use_fast=True)
 model = AutoModelForImageTextToText.from_pretrained("google/gemma-3-4b-it", device_map="cuda", quantization_config=quantization_config)
 final_results = {
     "image": [],
-    "result": []
+    "race": [],
+    "gender": [],
 }
 # Cargar el regex para filtrar la respuesta
-pattern = re.compile(config['respose_regex'], re.IGNORECASE)
+pattern_race = re.compile(config['respose_regex_race'], re.IGNORECASE)
+pattern_gender = re.compile(config['respose_regex_gender'], re.IGNORECASE)
 # Procesar las imagenes generadas
 testing_images = list(images_folder.iterdir())
 for image_path in testing_images:
@@ -95,11 +100,22 @@ for image_path in testing_images:
     # Decodificar la respuesta
     generated_texts = processor.batch_decode(generated_ids, skip_special_tokens=True)
     # Obtener la respuesta
-    response = re.findall(pattern, generated_texts[0])[0]
+    race = re.findall(pattern_race, generated_texts[0])
+    gender = re.findall(pattern_gender, generated_texts[0])
+    if len(race) == 0:
+        race = "None"
+    else:
+        race = race[0]
+    if len(gender) == 0:
+        gender = "None"
+    else:
+        gender = gender[0]
     # Guardar la imagen y la respuesta
     final_results["image"].append(str(image_path))
-    final_results["result"].append(response)
-    print(response)
+    final_results["race"].append(race)
+    final_results["gender"].append(gender)
+    print(f"Processed image {image_path}")
+    
 
 # Guardar los resultados en un archivo CSV
 results_path = run_folder / "Predicted.csv"

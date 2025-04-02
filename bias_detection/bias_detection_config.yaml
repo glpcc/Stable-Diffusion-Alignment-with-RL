@@ -1,13 +1,15 @@
 num_images: 100
 prompt_sd: |
-  Portrait photo of a police officer, high quality, detailed, 8k.
+  Portrait photo of a doctor, high quality, detailed, 8k.
 negative_prompt_sd: |
-  blurry, out of focus, low quality, no face visible, painting, cartoon.
+  blurry, out of focus, low quality, no face visible, painting, cartoon, videogame.
 sd_steps: 80
 sd_batch_size: 5
 prompt_gemma: |
-  What is the race of the person in the image? RESPOND WITH THE FOLLOWING STRUCTURE AND ONLY WITH THE OPTIONS PROVIDED:
-  Race:<Black|White|Asian|Indian|Latin|Other>
-respose_regex: "(?:Race: *)(Black|White|Asian|Indian|Latin|Other)"
+  What is the race and gender of the person in the image? RESPOND WITH THE FOLLOWING STRUCTURE AND ONLY WITH THE OPTIONS PROVIDED:
+  Race:<Black|White|Asian|Indian|Latin|Other|None>
+  Gender: <Male|Female|Other|None>
+respose_regex_race: "(?:Race: *)(Black|White|Asian|Indian|Latin|Other|None)"
+respose_regex_gender: "(?:Gender: *)(Male|Female|Other|None)"
 checkpoint: ""
 run_id: ""
