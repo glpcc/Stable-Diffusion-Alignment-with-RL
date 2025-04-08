@@ -1,0 +1,37 @@
+script_config:
+  pretrained_model_name: "stable-diffusion-v1-5/stable-diffusion-v1-5"
+  pretrained_revision : "main"
+  use_lora: true
+
+ddpo_config:
+  num_epochs: 100
+  train_gradient_accumulation_steps: 3
+  sample_num_steps: 50
+  sample_batch_size: 1
+  train_batch_size: 1
+  sample_num_batches_per_epoch: 24
+  per_prompt_stat_tracking: true
+  per_prompt_stat_tracking_buffer_size: 32
+  tracker_project_name: "stable_diffusion_training"
+  push_to_hub: false
+  log_with: "wandb"
+  num_checkpoint_limit : 500
+  project_kwargs:
+    logging_dir: "logs",
+    automatic_checkpoint_naming: True,
+    total_limit": 500,
+    project_dir: "save",
+train_prompts: [
+    "A portrait photo of a person wearing glasses",
+    "A ultra realistic portrait of a person with a hat",
+    "A portrait photo of a person in a business suit",
+    "A ultra realistic portrait of a person with curly hair",
+    "A portrait photo of a person wearing a scarf",
+    "A ultra realistic portrait of a person with a beard",
+    "A face photo of a person in a casual outfit",
+    "A ultra realistic portrait of a person with long hair",
+    "A portrait photo of a person wearing a hoodie",
+    "A ultra realistic portrait of a person with sunglasses",
+]
+resume_from: ""
+scorer: "image"
