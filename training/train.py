@@ -1,18 +1,14 @@
+import logging
 import os
-from dataclasses import dataclass, field
 import pathlib
+
 import numpy as np
 import torch
-import torch.nn as nn
-from huggingface_hub import hf_hub_download
-from huggingface_hub.utils import EntryNotFoundError
-from transformers import CLIPModel, CLIPProcessor, HfArgumentParser, is_torch_npu_available, is_torch_xpu_available
-from clip import get_clip_image_embedding, get_clip_text_embedding
 import yaml
+from clip import get_clip_image_embedding, get_clip_text_embedding
 from PIL import Image
-import json
+from transformers import HfArgumentParser
 from trl import DDPOConfig, DDPOTrainer, DefaultDDPOStableDiffusionPipeline
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
@@ -31,11 +27,8 @@ class ImageSimilarityScorer():
         self.dtype = dtype
 
     @torch.no_grad()
-    def __call__(self, images):
-        print(f"Shape of images: {images.shape}")
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        inputs = {k: v.to(self.dtype).to(device) for k, v in images.items()}
-        embed = get_clip_image_embedding(inputs)
+    def __call__(self, image):
+        embed = get_clip_image_embedding(image)
         return torch.nn.functional.cosine_similarity(embed, self.reference_image_features, dim=-1) *10
 
 
@@ -51,11 +44,8 @@ class TextSimilarityScorer():
         self.dtype = dtype
 
     @torch.no_grad()
-    def __call__(self, images):
-        print(f"Shape of images: {images.shape}")
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        inputs = {k: v.to(self.dtype).to(device) for k, v in images.items()}
-        embed = get_clip_image_embedding(inputs)
+    def __call__(self, image):
+        embed = get_clip_image_embedding(image)
         return torch.nn.functional.cosine_similarity(embed, self.reference_features, dim=-1)*10 
 
 
@@ -77,7 +67,7 @@ def image_outputs_logger(image_data, global_step, accelerate_logger):
     )
 
 def load_config(config_path,run_name):
-    with open(config_path, "r") as f:
+    with open(path / config_path, "r") as f:
         config = yaml.safe_load(f)
     config["ddpo_config"]["run_name"] = run_name
     # Create the folder for the run if it doesn't exist
@@ -98,7 +88,7 @@ def load_config(config_path,run_name):
 def load_pipeline(config):
     pipeline = DefaultDDPOStableDiffusionPipeline(
         pretrained_model_name=config["script_config"]["pretrained_model_name"],
-        pretrained_model_revision =config["script_config"]["pretrained_model_revision"],
+        pretrained_model_revision =config["script_config"]["pretrained_revision"],
         use_lora=config["script_config"]["use_lora"]
     )
     if config["resume_from"] != "":
@@ -106,8 +96,8 @@ def load_pipeline(config):
     
     return pipeline
 
-def load_scorer(config) -> function:
-    match config["script_config"]["scorer"]:
+def load_scorer(config):
+    match config["scorer"]:
         case "text":
             reference_text = config["reference_text"]
             scorer = TextSimilarityScorer(reference_text=reference_text,dtype=torch.float32)
@@ -135,11 +125,18 @@ def train(run_name: str):
     trainer = DDPOTrainer(
         ddpo_config,
         reward_function=scorer_fn,
-        prompt_function=lambda : (np.random.choice(config["prompts"]), {}),
+        prompt_function=lambda : (np.random.choice(config["train_prompts"]), {}),
         sd_pipeline=pipeline,
         image_samples_hook=image_outputs_logger,
     )
 
+    trainer.train()
+
+    # Create the directory for saving the model
+    os.makedirs(path / "runs" / run_name / "final_model", exist_ok=True)
+    trainer.save_model(
+        save_dir=path / "runs" / run_name / "final_model",
+    )
 if __name__ == "__main__":
     run_name = input("Enter run name: ")
     train(run_name)

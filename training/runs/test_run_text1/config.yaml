@@ -1,0 +1,37 @@
+ddpo_config:
+  log_with: wandb
+  num_checkpoint_limit: 500
+  num_epochs: 80
+  per_prompt_stat_tracking: true
+  per_prompt_stat_tracking_buffer_size: 32
+  project_kwargs:
+    automatic_checkpoint_naming: true
+    logging_dir: C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\test_run_text1\logs
+    project_dir: C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\test_run_text1\save
+    total_limit: 500
+  push_to_hub: false
+  run_name: test_run_text1
+  sample_batch_size: 1
+  sample_num_batches_per_epoch: 24
+  sample_num_steps: 50
+  tracker_project_name: stable_diffusion_training
+  train_batch_size: 1
+  train_gradient_accumulation_steps: 3
+reference_text: A black person
+resume_from: ''
+scorer: text
+script_config:
+  pretrained_model_name: stable-diffusion-v1-5/stable-diffusion-v1-5
+  pretrained_revision: main
+  use_lora: true
+train_prompts:
+- A portrait photo of a person wearing glasses
+- A ultra realistic portrait of a person with a hat
+- A portrait photo of a person in a business suit
+- A ultra realistic portrait of a person with curly hair
+- A portrait photo of a person wearing a scarf
+- A ultra realistic portrait of a person with a beard
+- A face photo of a person in a casual outfit
+- A ultra realistic portrait of a person with long hair
+- A portrait photo of a person wearing a hoodie
+- A ultra realistic portrait of a person with sunglasses

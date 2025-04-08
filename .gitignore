@@ -4,3 +4,4 @@ wandb
 save
 save*
 bias_detection/runs/*/images/*
+training/runs/*/save

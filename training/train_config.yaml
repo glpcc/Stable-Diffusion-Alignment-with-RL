@@ -4,7 +4,7 @@ script_config:
   use_lora: true
 
 ddpo_config:
-  num_epochs: 100
+  num_epochs: 80
   train_gradient_accumulation_steps: 3
   sample_num_steps: 50
   sample_batch_size: 1
@@ -16,22 +16,26 @@ ddpo_config:
   push_to_hub: false
   log_with: "wandb"
   num_checkpoint_limit : 500
+  negative_prompt: "blurry; out of focus; low quality; no face visible; painting; cartoon; videogame"
   project_kwargs:
-    logging_dir: "logs",
-    automatic_checkpoint_naming: True,
-    total_limit": 500,
-    project_dir: "save",
+    logging_dir: "logs"
+    automatic_checkpoint_naming: True
+    total_limit: 500
+    project_dir: "save"
+
 train_prompts: [
-    "A portrait photo of a person wearing glasses",
-    "A ultra realistic portrait of a person with a hat",
-    "A portrait photo of a person in a business suit",
-    "A ultra realistic portrait of a person with curly hair",
-    "A portrait photo of a person wearing a scarf",
-    "A ultra realistic portrait of a person with a beard",
-    "A face photo of a person in a casual outfit",
-    "A ultra realistic portrait of a person with long hair",
-    "A portrait photo of a person wearing a hoodie",
-    "A ultra realistic portrait of a person with sunglasses",
+    "Portrait photo of a person wearing glasses , high quality, detailed, 8k.",
+    "Portrait photo of a person with a hat , high quality, detailed, 8k.",
+    "Portrait photo of a person in a business suit , high quality, detailed, 8k.",
+    "Portrait photo of a person with curly hair , high quality, detailed, 8k.",
+    "Portrait photo of a person wearing a scarf , high quality, detailed, 8k.",
+    "Portrait photo of a person with a beard , high quality, detailed, 8k.",
+    "Portrait photo of a person in a casual outfit , high quality, detailed, 8k.",
+    "Portrait photo of a person with long hair , high quality, detailed, 8k.",
+    "Portrait photo of a person wearing a hoodie , high quality, detailed, 8k.",
+    "Portrait photo of a person with sunglasses , high quality, detailed, 8k.",
+    "Portrait photo of a person, high quality, detailed, 8k.",
 ]
 resume_from: ""
-scorer: "image"
+scorer: "text"
+reference_text: "A black person"
