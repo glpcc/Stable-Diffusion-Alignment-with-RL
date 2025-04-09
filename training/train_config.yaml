@@ -10,13 +10,11 @@ ddpo_config:
   sample_batch_size: 1
   train_batch_size: 1
   sample_num_batches_per_epoch: 24
-  per_prompt_stat_tracking: true
-  per_prompt_stat_tracking_buffer_size: 32
   tracker_project_name: "stable_diffusion_training"
   push_to_hub: false
   log_with: "wandb"
   num_checkpoint_limit : 500
-  negative_prompt: "blurry; out of focus; low quality; no face visible; painting; cartoon; videogame"
+  negative_prompts: "blurry; out of focus; low quality; no face visible; painting; cartoon; videogame"
   project_kwargs:
     logging_dir: "logs"
     automatic_checkpoint_naming: True
