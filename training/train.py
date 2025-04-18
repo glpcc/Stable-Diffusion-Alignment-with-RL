@@ -9,6 +9,7 @@ from clip import get_clip_image_embedding, get_clip_text_embedding
 from PIL import Image
 from transformers import HfArgumentParser
 from trl import DDPOConfig, DDPOTrainer, DefaultDDPOStableDiffusionPipeline
+from matplotlib import pyplot as plt
 
 logging.basicConfig(level=logging.INFO)
 

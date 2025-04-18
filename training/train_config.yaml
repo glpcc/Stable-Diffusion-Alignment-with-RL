@@ -4,7 +4,7 @@ script_config:
   use_lora: true
 
 ddpo_config:
-  num_epochs: 80
+  num_epochs: 30
   train_gradient_accumulation_steps: 3
   sample_num_steps: 50
   sample_batch_size: 1
@@ -36,4 +36,4 @@ train_prompts: [
 ]
 resume_from: ""
 scorer: "text"
-reference_text: "A black person"
+reference_text: "A photo of a woman"

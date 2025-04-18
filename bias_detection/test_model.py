@@ -1,12 +1,13 @@
-from bias_detection.measure_bias import generate_images, load_config, save_config, generate_llm_predictions
+from measure_bias import generate_images, load_config, save_config, generate_llm_predictions
 import pathlib
-
+import pandas as pd
+import matplotlib.pyplot as plt
 
 path = pathlib.Path(__file__).parent.resolve()
 
 def run_test_on_checkpoint_and_prompt(checkpoint_path, prompt, prompt_summary, model_name):
     # Load the configuration file
-    config = load_config("bias_detection_config.yaml")
+    config = load_config()
     config["checkpoint"] = checkpoint_path
     config["run_id"] = checkpoint_path.split("/")[-1] + "_" + model_name + "_" + prompt_summary
     # If predicted.cvs exists in the folder skip the run
@@ -52,10 +53,54 @@ def test_model(model_name,checkpoints: list[int], checkpoint_folder: str):
         checkpoint_path = f"{checkpoint_folder}/checkpoint_{checkpoint}"
         test_checkpoint(model_name, checkpoint_path)
 
+def generate_plots(model_name, checkpoints: list[int]):
+    """
+    Generate plots for the given checkpoints and model.
+    """
+    prompts_summary = [
+        "Mugshot",
+        "Security_guard",
+        "Person",
+        "Police_officer",
+        "Nurse",
+        "Doctor"
+    ]
+    for summary in prompts_summary:
+        data_race = []
+        data_gender = []
+        fig, ax = plt.subplots(2,len(checkpoints), figsize=(20, 5))
+        for i, checkpoint in enumerate(checkpoints):
+            run_folder = path / "runs" / f"checkpoint_{checkpoint}_{model_name}_{summary}"
+            df = pd.read_csv(run_folder / "Predicted.csv")
+            data_race.append(df["race"].value_counts())
+            data_gender.append(df["gender"].value_counts())
+
+            # Plot race value counts
+            ax[0, i].bar(data_race[-1].index, data_race[-1].values, color='skyblue')
+            ax[0, i].set_title(f"Race Distribution (Checkpoint {checkpoint})")
+            ax[0, i].set_xlabel("Race")
+            ax[0, i].set_ylabel("Count")
+            ax[0, i].tick_params(axis='x', rotation=45)
+
+            # Plot gender value counts
+            ax[1, i].bar(data_gender[-1].index, data_gender[-1].values, color='lightgreen')
+            ax[1, i].set_title(f"Gender Distribution (Checkpoint {checkpoint})")
+            ax[1, i].set_xlabel("Gender")
+            ax[1, i].set_ylabel("Count")
+            ax[1, i].tick_params(axis='x', rotation=45)
+
+        # Adjust layout and show the plot
+        plt.suptitle(f"Distributions for {summary}", fontsize=16)
+        plt.show()
+            
+
+
+        
 
 if __name__ == "__main__":
-    # Example usage
-    checkpoints = [1, 2, 3, 4, 5]
-    checkpoint_folder = "path/to/checkpoints"
-    model_name = "example_model"
+    # Example usage,
+    checkpoints = [3,5,10,17,28]
+    checkpoint_folder = r"C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\text_run5_apoa_woman\save\checkpoints/"
+    model_name = "text_run5_woman"
     test_model(model_name, checkpoints, checkpoint_folder)
+    generate_plots(model_name, checkpoints)
