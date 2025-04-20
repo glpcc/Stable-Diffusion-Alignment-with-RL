@@ -22,15 +22,32 @@ class ImageSimilarityScorer():
     This model attempts to make the generated images to be as similar as possible to the reference image
     """
 
-    def __init__(self,reference_image, *, dtype):
+    def __init__(self,config, *, dtype):
         super().__init__()
-        self.reference_image_features = get_clip_image_embedding(reference_image)
+        reference_image_path = path / "reference_images"
+        self.reference_images_features = {}
+        for prompt in config["train_prompts"]:
+            image_path = reference_image_path / f"image_{prompt}.png"
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Reference image {image_path} not found.")
+            image = Image.open(image_path).convert("RGB")
+            image_features = get_clip_image_embedding(image)
+            self.reference_images_features[prompt] = image_features
+        
         self.dtype = dtype
 
     @torch.no_grad()
-    def __call__(self, image):
-        embed = get_clip_image_embedding(image)
-        return torch.nn.functional.cosine_similarity(embed, self.reference_image_features, dim=-1) *10
+    def __call__(self, images, prompts):
+        embed = get_clip_image_embedding(images)
+        result = torch.zeros(embed.shape[0], device=embed.device, dtype=self.dtype)
+        i = 0
+        for feat, prompt in zip(embed, prompts):
+            if prompt not in self.reference_images_features:
+                raise ValueError(f"Prompt {prompt} not found in reference images.")
+            self.reference_features = self.reference_images_features[prompt].to(embed.device)
+            result[i] = torch.nn.functional.cosine_similarity(feat, self.reference_features, dim=-1) *10
+            i += 1
+        return result
 
 
 class TextSimilarityScorer():
@@ -45,7 +62,7 @@ class TextSimilarityScorer():
         self.dtype = dtype
 
     @torch.no_grad()
-    def __call__(self, image):
+    def __call__(self, image, prompts):
         embed = get_clip_image_embedding(image)
         return torch.nn.functional.cosine_similarity(embed, self.reference_features, dim=-1)*10 
 
@@ -103,15 +120,14 @@ def load_scorer(config):
             reference_text = config["reference_text"]
             scorer = TextSimilarityScorer(reference_text=reference_text,dtype=torch.float32)
         case "image":
-            reference_image = Image.open(config["reference_image"])
-            scorer = ImageSimilarityScorer(reference_image=reference_image,dtype=torch.float32)
+            scorer = ImageSimilarityScorer(config,dtype=torch.float32)
         case "custom":
             raise NotImplementedError("Custom scorer not implemented.")
         case _:
             raise ValueError("Invalid scorer type. Choose 'text' or 'image'.")
     
     def scorer_fn(images, prompts, model):
-        scores = scorer(images)
+        scores = scorer(images,prompts)
         print(scores)
         return scores, {}
     

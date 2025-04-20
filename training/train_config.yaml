@@ -35,5 +35,5 @@ train_prompts: [
     "Portrait photo of a person, high quality, detailed, 8k.",
 ]
 resume_from: ""
-scorer: "text"
+scorer: "image"
 reference_text: "A photo of a woman"

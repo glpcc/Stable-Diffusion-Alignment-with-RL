@@ -54,7 +54,7 @@ def get_clip_text_embedding(text: str):
 if __name__ == "__main__":
     # Plot the images with the similarity score to the testing test
     test_image_folder = pathlib.Path(__file__).parent.resolve() / "testing_images"
-    test_text = "A photo of a black person"
+    test_text = "A doctor"
     all_images = list(test_image_folder.iterdir())
     all_images = [Image.open(image_path) for image_path in all_images]
     all_images_embeddings = get_clip_image_embedding(all_images)
