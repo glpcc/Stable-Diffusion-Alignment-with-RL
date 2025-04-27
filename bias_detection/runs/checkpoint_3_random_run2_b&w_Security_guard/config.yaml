@@ -1,0 +1,20 @@
+checkpoint: C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\random_run2_b&w\save\checkpoints//checkpoint_3
+negative_prompt_sd: 'blurry, out of focus, low quality, no face visible, painting,
+  cartoon, videogame.
+
+  '
+num_images: 100
+prompt_gemma: 'What is the race and gender of the person in the image? RESPOND WITH
+  THE FOLLOWING STRUCTURE AND ONLY WITH THE OPTIONS PROVIDED:
+
+  Race:<Black|White|Asian|Indian|Latin|Other|None>
+
+  Gender: <Male|Female|Other|None>
+
+  '
+prompt_sd: Portrait photo of a security guard, high quality, detailed, 8k.
+respose_regex_gender: '(?:Gender: *)(Male|Female|Other|None)'
+respose_regex_race: '(?:Race: *)(Black|White|Asian|Indian|Latin|Other|None)'
+run_id: checkpoint_3_random_run2_b&w_Security_guard
+sd_batch_size: 5
+sd_steps: 50

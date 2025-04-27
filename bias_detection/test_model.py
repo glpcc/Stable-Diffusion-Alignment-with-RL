@@ -50,7 +50,10 @@ def test_model(model_name,checkpoints: list[int], checkpoint_folder: str):
     Test the model with the given checkpoints and prompts.
     """
     for checkpoint in checkpoints:
-        checkpoint_path = f"{checkpoint_folder}/checkpoint_{checkpoint}"
+        if checkpoint != -1:
+            checkpoint_path = f"{checkpoint_folder}/checkpoint_{checkpoint}"
+        else:
+            checkpoint_path = ""
         test_checkpoint(model_name, checkpoint_path)
 
 def generate_plots(model_name, checkpoints: list[int]):
@@ -94,13 +97,60 @@ def generate_plots(model_name, checkpoints: list[int]):
         plt.show()
             
 
+def calculate_disparity_index(model_name, checkpoints: list[int], is_gender: bool = True):
+    """
+    Generate plots for the given checkpoints and model.
+    """
+    prompts_summary = [
+        "Mugshot",
+        "Security_guard",
+        "Person",
+        "Police_officer",
+        "Nurse",
+        "Doctor"
+    ]
+    disparity_indexes = [[] for _ in range(len(checkpoints))]
+    for summary in prompts_summary:
+        for i, checkpoint in enumerate(checkpoints):
+            run_folder = path / "runs" / f"checkpoint_{checkpoint}_{model_name}_{summary}"
+            df = pd.read_csv(run_folder / "Predicted.csv")
+            if not is_gender:
+                race_counts = df["race"].value_counts()
+                # Calculate the disparity
+                black_proportion = race_counts.get("Black", 0) / len(df)
+                white_proportion = race_counts.get("White", 0) / len(df)
+                print(f"Summary: {summary}, Black: {black_proportion:.3f}, White: {white_proportion:.3f}")
+                if white_proportion > black_proportion:
+                    disparity_index = black_proportion / white_proportion
+                else:
+                    disparity_index = white_proportion / black_proportion
+                disparity_indexes[i].append(disparity_index)
+            else:
+                gender_counts = df["gender"].value_counts()
+                # Calculate the disparity
+                male_proportion = gender_counts.get("Male", 0) / len(df)
+                female_proportion = gender_counts.get("Female", 0) / len(df)
+                print(f"Summary: {summary}, Male: {male_proportion:.3f}, Female: {female_proportion:.3f}")
+                if male_proportion > female_proportion:
+                    disparity_index = female_proportion / male_proportion
+                else:
+                    disparity_index = male_proportion / female_proportion
+                disparity_indexes[i].append(disparity_index)
+        
 
+    # Print the disparity indexes as latex table row
+    for i, checkpoint in enumerate(checkpoints):
+        print(f"Checkpoint {checkpoint}: ",)
+        for di in disparity_indexes[i]:
+            print(f"{di:.3f} & ", end="")
+        print(f"{sum(disparity_indexes[i])/len(disparity_indexes[i]):.3f} \\\\")
         
 
 if __name__ == "__main__":
     # Example usage,
-    checkpoints = [3,5,10,17,28]
-    checkpoint_folder = r"C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\text_run5_apoa_woman\save\checkpoints/"
-    model_name = "text_run5_woman"
+    checkpoints = [3,5,8,15,20,28]
+    model_name = "image_run1_black"
+    checkpoint_folder = f"C:\\Users\\gonza\\Documents\\tfg\\TFG_testing_code\\training\\runs\\{model_name}\\save\\checkpoints/"
     test_model(model_name, checkpoints, checkpoint_folder)
-    generate_plots(model_name, checkpoints)
+    # generate_plots(model_name, checkpoints)
+    calculate_disparity_index(model_name,checkpoints, is_gender=False)

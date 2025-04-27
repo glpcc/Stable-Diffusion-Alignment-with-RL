@@ -4,7 +4,7 @@ script_config:
   use_lora: true
 
 ddpo_config:
-  num_epochs: 30
+  num_epochs: 60
   train_gradient_accumulation_steps: 3
   sample_num_steps: 50
   sample_batch_size: 1
@@ -35,5 +35,6 @@ train_prompts: [
     "Portrait photo of a person, high quality, detailed, 8k.",
 ]
 resume_from: ""
-scorer: "image"
-reference_text: "A photo of a woman"
+scorer: "random"
+reference_text1: "A photo of a black person"
+reference_text2: "A photo of a white person"

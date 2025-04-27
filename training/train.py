@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+import random
 
 import numpy as np
 import torch
@@ -66,7 +67,25 @@ class TextSimilarityScorer():
         embed = get_clip_image_embedding(image)
         return torch.nn.functional.cosine_similarity(embed, self.reference_features, dim=-1)*10 
 
+class RandomTextSimilarityScorer():
+    """
+    This model attempts to make the generated images to be as similar as possible to the clip text prompt
 
+    """
+
+    def __init__(self,reference_text1,reference_text2, *, dtype):
+        super().__init__()
+        self.reference_features1 = get_clip_text_embedding(reference_text1)
+        self.reference_features2 = get_clip_text_embedding(reference_text2)
+        self.dtype = dtype
+
+    @torch.no_grad()
+    def __call__(self, image, prompts):
+        embed = get_clip_image_embedding(image)
+        if random.random() > 0.5:
+            return torch.nn.functional.cosine_similarity(embed, self.reference_features1, dim=-1)*10
+        else:
+            return torch.nn.functional.cosine_similarity(embed, self.reference_features2, dim=-1)*10
 
 
 def image_outputs_logger(image_data, global_step, accelerate_logger):
@@ -121,6 +140,10 @@ def load_scorer(config):
             scorer = TextSimilarityScorer(reference_text=reference_text,dtype=torch.float32)
         case "image":
             scorer = ImageSimilarityScorer(config,dtype=torch.float32)
+        case "random":
+            reference_text1 = config["reference_text1"]
+            reference_text2 = config["reference_text2"]
+            scorer = RandomTextSimilarityScorer(reference_text1=reference_text1,reference_text2=reference_text2,dtype=torch.float32)
         case "custom":
             raise NotImplementedError("Custom scorer not implemented.")
         case _:
@@ -151,9 +174,7 @@ def train(run_name: str):
 
     # Create the directory for saving the model
     os.makedirs(path / "runs" / run_name / "final_model", exist_ok=True)
-    trainer.save_model(
-        save_dir=path / "runs" / run_name / "final_model",
-    )
+    trainer.sd_pipeline.save_pretrained(path / "runs" / run_name / "final_model")
 if __name__ == "__main__":
     run_name = input("Enter run name: ")
     train(run_name)

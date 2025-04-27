@@ -43,7 +43,7 @@ def generate_images(config):
     model_id = "stable-diffusion-v1-5/stable-diffusion-v1-5"
     pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
     # Cargar un modelo preentrenado para medir la calidad
-    if config["checkpoint"] != "":
+    if config["checkpoint"] != "" and "checkpoint_0" not in config["checkpoint"]:
         print("Loading checkpoint")
         pipe.load_lora_weights(config["checkpoint"], weight_name="pytorch_lora_weights.safetensors")
 
