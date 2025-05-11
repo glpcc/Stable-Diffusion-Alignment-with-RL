@@ -6,7 +6,7 @@ clip = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 clip.to(device)
 
-def get_clip_image_embedding(images):
+def get_clip_image_embedding(images, do_rescale=False):
     """
     Get the CLIP image embedding for a given image.
 
@@ -21,7 +21,7 @@ def get_clip_image_embedding(images):
     processor: CLIPProcessor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
 
     # Preprocess the image
-    inputs = processor(images=images, return_tensors="pt",do_rescale=False)
+    inputs = processor(images=images, return_tensors="pt",do_rescale=do_rescale)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Move the inputs to the appropriate device (GPU or CPU)
     inputs = {k: v.to(torch.float32).to(device) for k, v in inputs.items()}

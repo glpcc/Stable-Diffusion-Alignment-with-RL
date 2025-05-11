@@ -35,6 +35,6 @@ train_prompts: [
     "Portrait photo of a person, high quality, detailed, 8k.",
 ]
 resume_from: ""
-scorer: "random"
-reference_text1: "A photo of a black person"
-reference_text2: "A photo of a white person"
+scorer: "image"
+reference_text1: "A photo of a woman"
+reference_text2: "A photo of a man"

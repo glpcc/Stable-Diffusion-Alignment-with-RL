@@ -5,3 +5,4 @@ save
 save*
 bias_detection/runs/*/images/*
 training/runs/*/save
+training/runs/*/final_model

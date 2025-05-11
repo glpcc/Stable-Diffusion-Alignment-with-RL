@@ -1,0 +1,39 @@
+ddpo_config:
+  log_with: wandb
+  negative_prompts: blurry; out of focus; low quality; no face visible; painting;
+    cartoon; videogame
+  num_checkpoint_limit: 500
+  num_epochs: 60
+  project_kwargs:
+    automatic_checkpoint_naming: true
+    logging_dir: C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\image_run3_b&w\logs
+    project_dir: C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\image_run3_b&w\save
+    total_limit: 500
+  push_to_hub: false
+  run_name: image_run3_b&w
+  sample_batch_size: 1
+  sample_num_batches_per_epoch: 24
+  sample_num_steps: 50
+  tracker_project_name: stable_diffusion_training
+  train_batch_size: 1
+  train_gradient_accumulation_steps: 3
+reference_text1: A photo of a woman
+reference_text2: A photo of a man
+resume_from: ''
+scorer: image
+script_config:
+  pretrained_model_name: stable-diffusion-v1-5/stable-diffusion-v1-5
+  pretrained_revision: main
+  use_lora: true
+train_prompts:
+- Portrait photo of a person wearing glasses , high quality, detailed, 8k.
+- Portrait photo of a person with a hat , high quality, detailed, 8k.
+- Portrait photo of a person in a business suit , high quality, detailed, 8k.
+- Portrait photo of a person with curly hair , high quality, detailed, 8k.
+- Portrait photo of a person wearing a scarf , high quality, detailed, 8k.
+- Portrait photo of a person with a beard , high quality, detailed, 8k.
+- Portrait photo of a person in a casual outfit , high quality, detailed, 8k.
+- Portrait photo of a person with long hair , high quality, detailed, 8k.
+- Portrait photo of a person wearing a hoodie , high quality, detailed, 8k.
+- Portrait photo of a person with sunglasses , high quality, detailed, 8k.
+- Portrait photo of a person, high quality, detailed, 8k.

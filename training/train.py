@@ -26,28 +26,22 @@ class ImageSimilarityScorer():
     def __init__(self,config, *, dtype):
         super().__init__()
         reference_image_path = path / "reference_images"
-        self.reference_images_features = {}
-        for prompt in config["train_prompts"]:
-            image_path = reference_image_path / f"image_{prompt}.png"
-            if not os.path.exists(image_path):
-                raise FileNotFoundError(f"Reference image {image_path} not found.")
+        self.reference_images_features = []
+        self.reference_images = reference_image_path.glob("*")
+        for image_path in self.reference_images:
             image = Image.open(image_path).convert("RGB")
-            image_features = get_clip_image_embedding(image)
-            self.reference_images_features[prompt] = image_features
+            emb = get_clip_image_embedding(image,do_rescale=True)
+            print(f"Image path: {image_path}, embedding shape: {emb.shape}")
+            self.reference_images_features.append(emb)
         
         self.dtype = dtype
 
     @torch.no_grad()
     def __call__(self, images, prompts):
         embed = get_clip_image_embedding(images)
-        result = torch.zeros(embed.shape[0], device=embed.device, dtype=self.dtype)
-        i = 0
-        for feat, prompt in zip(embed, prompts):
-            if prompt not in self.reference_images_features:
-                raise ValueError(f"Prompt {prompt} not found in reference images.")
-            self.reference_features = self.reference_images_features[prompt].to(embed.device)
-            result[i] = torch.nn.functional.cosine_similarity(feat, self.reference_features, dim=-1) *10
-            i += 1
+        random_references = random.sample(self.reference_images_features,1)[0] 
+        print(random_references.shape)
+        result = torch.nn.functional.cosine_similarity(embed, random_references, dim=-1)*10
         return result
 
 
@@ -87,7 +81,53 @@ class RandomTextSimilarityScorer():
         else:
             return torch.nn.functional.cosine_similarity(embed, self.reference_features2, dim=-1)*10
 
+class DisparityScoreScorer():
+    """
+    This model attempts to make the generated images to be as similar as possible to the clip text prompt
 
+    """
+
+    def __init__(self,reference_text1,reference_text2, *, dtype):
+        super().__init__()
+        print(f"Reference text 1: {reference_text1}, reference text 2: {reference_text2}")
+        self.reference_features1 = get_clip_text_embedding(reference_text1)
+        self.reference_features2 = get_clip_text_embedding(reference_text2)
+        # Asume the reference 2 is the majority
+        self.last_20_generations = {
+            "Mugshot" : [2]*10,
+            "Portrait photo of a security guard, high quality, detailed, 8k.": [2]*10,
+            "Portrait photo of a person, high quality, detailed, 8k.": [2]*10,
+            "Portrait photo of a police officer, high quality, detailed, 8k.": [2]*10,
+            "Portrait photo of a nurse, high quality, detailed, 8k.": [1]*10,
+            "Portrait photo of a doctor, high quality, detailed, 8k.": [2]*10,
+        }
+        self.dtype = dtype
+
+    @torch.no_grad()
+    def __call__(self, image, prompts):
+        embed = get_clip_image_embedding(image)
+        similarity_with_one = torch.nn.functional.cosine_similarity(embed, self.reference_features1, dim=-1)*5
+        similarity_with_two = torch.nn.functional.cosine_similarity(embed, self.reference_features2, dim=-1)*5
+        print(f"Similarity with one: {similarity_with_one}, similarity with two: {similarity_with_two}")
+        p = prompts[0]
+        self.last_20_generations[p].pop(0)
+        if similarity_with_two > similarity_with_one:
+            self.last_20_generations[p].append(2)
+        else:
+            self.last_20_generations[p].append(1)
+        print(self.last_20_generations[p])
+        two_count = self.last_20_generations[p].count(2)
+        one_count = len(self.last_20_generations[p]) - two_count
+        print(f"Two count: {two_count}, One count: {one_count}")
+        if two_count >= one_count:
+            id_score = one_count / two_count
+            print(f"ID score: {id_score}")
+            return similarity_with_one + id_score
+        else:
+            id_score = two_count / one_count
+            print(f"ID score: {id_score}")
+            return similarity_with_two + id_score
+        
 def image_outputs_logger(image_data, global_step, accelerate_logger):
     result = {}
     for data in image_data[-4:]:
@@ -139,13 +179,16 @@ def load_scorer(config):
             reference_text = config["reference_text"]
             scorer = TextSimilarityScorer(reference_text=reference_text,dtype=torch.float32)
         case "image":
+            print(f"You are using the image similarity scorer")
             scorer = ImageSimilarityScorer(config,dtype=torch.float32)
         case "random":
             reference_text1 = config["reference_text1"]
             reference_text2 = config["reference_text2"]
             scorer = RandomTextSimilarityScorer(reference_text1=reference_text1,reference_text2=reference_text2,dtype=torch.float32)
-        case "custom":
-            raise NotImplementedError("Custom scorer not implemented.")
+        case "idscore":
+            reference_text1 = config["reference_text1"]
+            reference_text2 = config["reference_text2"]
+            scorer = DisparityScoreScorer(reference_text1=reference_text1,reference_text2=reference_text2,dtype=torch.float32)
         case _:
             raise ValueError("Invalid scorer type. Choose 'text' or 'image'.")
     
@@ -175,6 +218,7 @@ def train(run_name: str):
     # Create the directory for saving the model
     os.makedirs(path / "runs" / run_name / "final_model", exist_ok=True)
     trainer.sd_pipeline.save_pretrained(path / "runs" / run_name / "final_model")
+
 if __name__ == "__main__":
     run_name = input("Enter run name: ")
     train(run_name)

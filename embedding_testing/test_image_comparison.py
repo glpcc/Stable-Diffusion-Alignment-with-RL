@@ -53,16 +53,17 @@ def get_clip_text_embedding(text: str):
 
 if __name__ == "__main__":
     # Plot the images with the similarity score to the testing test
-    test_image_folder = pathlib.Path(__file__).parent.resolve() / "generated_images"
-    test_image = pathlib.Path(__file__).parent.resolve() / "test_image.png"
+    test_image_folder = pathlib.Path(__file__).parent.resolve() / "testing_images"
+    test_image = pathlib.Path(__file__).parent.resolve() / "ti3.png"
     all_images = list(test_image_folder.iterdir())
     all_images = [Image.open(image_path) for image_path in all_images]
+    all_images = [image.convert("RGB") for image in all_images]
     all_images_embeddings = get_clip_image_embedding(all_images)
-    test_image = Image.open(test_image).convert("RGB")
+    test_image = Image.open(test_image)
     reference_embedding = get_clip_image_embedding([test_image])
     fig, ax = plt.subplots(1, len(all_images), figsize=(20, 20))
     for i, image in enumerate(all_images_embeddings):
-        score = torch.nn.functional.cosine_similarity(image, reference_embedding, dim=-1).item()
+        score = torch.nn.functional.cosine_similarity(image, reference_embedding, dim=-1).item() * 10
         ax[i].imshow(all_images[i])
         ax[i].set_title(f"Score: {score:.4f}")
         ax[i].axis('off')

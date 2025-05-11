@@ -113,6 +113,8 @@ def calculate_disparity_index(model_name, checkpoints: list[int], is_gender: boo
     for summary in prompts_summary:
         for i, checkpoint in enumerate(checkpoints):
             run_folder = path / "runs" / f"checkpoint_{checkpoint}_{model_name}_{summary}"
+            if checkpoint == -1:
+                run_folder = path / "runs" / f"_{model_name}_{summary}"
             df = pd.read_csv(run_folder / "Predicted.csv")
             if not is_gender:
                 race_counts = df["race"].value_counts()
@@ -122,9 +124,11 @@ def calculate_disparity_index(model_name, checkpoints: list[int], is_gender: boo
                 print(f"Summary: {summary}, Black: {black_proportion:.3f}, White: {white_proportion:.3f}")
                 if white_proportion > black_proportion:
                     disparity_index = black_proportion / white_proportion
+                    majority = True
                 else:
                     disparity_index = white_proportion / black_proportion
-                disparity_indexes[i].append(disparity_index)
+                    majority = False
+                disparity_indexes[i].append((disparity_index,majority))
             else:
                 gender_counts = df["gender"].value_counts()
                 # Calculate the disparity
@@ -133,24 +137,26 @@ def calculate_disparity_index(model_name, checkpoints: list[int], is_gender: boo
                 print(f"Summary: {summary}, Male: {male_proportion:.3f}, Female: {female_proportion:.3f}")
                 if male_proportion > female_proportion:
                     disparity_index = female_proportion / male_proportion
+                    majority = True
                 else:
                     disparity_index = male_proportion / female_proportion
-                disparity_indexes[i].append(disparity_index)
+                    majority = False
+                disparity_indexes[i].append((disparity_index,majority))
         
 
     # Print the disparity indexes as latex table row
     for i, checkpoint in enumerate(checkpoints):
-        print(f"Checkpoint {checkpoint}: ",)
-        for di in disparity_indexes[i]:
-            print(f"{di:.3f} & ", end="")
-        print(f"{sum(disparity_indexes[i])/len(disparity_indexes[i]):.3f} \\\\")
+        print(f"{checkpoint} & ", end='')
+        for di,m in disparity_indexes[i]:
+            print(f"${di:.3f}^{'+'if m else '-'}$ & ", end="")
+        print(f"{sum(d for d,m in disparity_indexes[i])/len(disparity_indexes[i]):.3f} \\\\")
         
 
 if __name__ == "__main__":
     # Example usage,
-    checkpoints = [3,5,8,15,20,28]
-    model_name = "image_run1_black"
+    checkpoints = [3,4,5,6,7,10,15,29,37,40,52]
+    model_name = "image_run6_b&W"
     checkpoint_folder = f"C:\\Users\\gonza\\Documents\\tfg\\TFG_testing_code\\training\\runs\\{model_name}\\save\\checkpoints/"
     test_model(model_name, checkpoints, checkpoint_folder)
     # generate_plots(model_name, checkpoints)
-    calculate_disparity_index(model_name,checkpoints, is_gender=False)
+    calculate_disparity_index(model_name,checkpoints, is_gender=False)  
