@@ -148,15 +148,18 @@ def calculate_disparity_index(model_name, checkpoints: list[int], is_gender: boo
     for i, checkpoint in enumerate(checkpoints):
         print(f"{checkpoint} & ", end='')
         for di,m in disparity_indexes[i]:
-            print(f"${di:.3f}^{'+'if m else '-'}$ & ", end="")
+            if is_gender:
+                print(f"${di:.3f}^{'H'if m else 'M'}$ & ", end="")
+            else:
+                print(f"${di:.3f}^{'B'if m else 'N'}$ & ", end="")
         print(f"{sum(d for d,m in disparity_indexes[i])/len(disparity_indexes[i]):.3f} \\\\")
         
 
 if __name__ == "__main__":
     # Example usage,
-    checkpoints = [3,4,5,6,7,10,15,29,37,40,52]
-    model_name = "image_run6_b&W"
+    checkpoints = [3,5,15,28,40]
+    model_name = "idscore_woman_per_prompt"
     checkpoint_folder = f"C:\\Users\\gonza\\Documents\\tfg\\TFG_testing_code\\training\\runs\\{model_name}\\save\\checkpoints/"
     test_model(model_name, checkpoints, checkpoint_folder)
     # generate_plots(model_name, checkpoints)
-    calculate_disparity_index(model_name,checkpoints, is_gender=False)  
+    calculate_disparity_index(model_name,checkpoints, is_gender=True)  
