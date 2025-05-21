@@ -1,0 +1,20 @@
+checkpoint: C:\Users\gonza\Documents\tfg\TFG_testing_code\training\runs\idscore_woman_v3\save\checkpoints//checkpoint_5
+negative_prompt_sd: 'blurry, out of focus, low quality, no face visible, painting,
+  cartoon, videogame.
+
+  '
+num_images: 100
+prompt_gemma: 'What is the race and gender of the person in the image? RESPOND WITH
+  THE FOLLOWING STRUCTURE AND ONLY WITH THE OPTIONS PROVIDED:
+
+  Race:<Black|White|Asian|Indian|Latin|Other|None>
+
+  Gender: <Male|Female|Other|None>
+
+  '
+prompt_sd: Portrait photo of a nurse, high quality, detailed, 8k.
+respose_regex_gender: '(?:Gender: *)(Male|Female|Other|None)'
+respose_regex_race: '(?:Race: *)(Black|White|Asian|Indian|Latin|Other|None)'
+run_id: checkpoint_5_idscore_woman_v3_Nurse
+sd_batch_size: 5
+sd_steps: 50

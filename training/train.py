@@ -93,14 +93,7 @@ class DisparityScoreScorer():
         self.reference_features1 = get_clip_text_embedding(reference_text1)
         self.reference_features2 = get_clip_text_embedding(reference_text2)
         # Asume the reference 2 is the majority
-        self.last_20_generations = {
-            "Mugshot" : [2]*10,
-            "Portrait photo of a security guard, high quality, detailed, 8k.": [2]*10,
-            "Portrait photo of a person, high quality, detailed, 8k.": [2]*10,
-            "Portrait photo of a police officer, high quality, detailed, 8k.": [2]*10,
-            "Portrait photo of a nurse, high quality, detailed, 8k.": [1]*10,
-            "Portrait photo of a doctor, high quality, detailed, 8k.": [2]*10,
-        }
+        self.last_20_generations = [2] * 20
         self.dtype = dtype
 
     @torch.no_grad()
@@ -109,15 +102,14 @@ class DisparityScoreScorer():
         similarity_with_one = torch.nn.functional.cosine_similarity(embed, self.reference_features1, dim=-1)*5
         similarity_with_two = torch.nn.functional.cosine_similarity(embed, self.reference_features2, dim=-1)*5
         print(f"Similarity with one: {similarity_with_one}, similarity with two: {similarity_with_two}")
-        p = prompts[0]
-        self.last_20_generations[p].pop(0)
+        self.last_20_generations.pop(0)
         if similarity_with_two > similarity_with_one:
-            self.last_20_generations[p].append(2)
+            self.last_20_generations.append(2)
         else:
-            self.last_20_generations[p].append(1)
-        print(self.last_20_generations[p])
-        two_count = self.last_20_generations[p].count(2)
-        one_count = len(self.last_20_generations[p]) - two_count
+            self.last_20_generations.append(1)
+        print(self.last_20_generations)
+        two_count = self.last_20_generations.count(2)
+        one_count = len(self.last_20_generations) - two_count
         print(f"Two count: {two_count}, One count: {one_count}")
         if two_count >= one_count:
             id_score = one_count / two_count
@@ -136,7 +128,7 @@ def image_outputs_logger(image_data, global_step, accelerate_logger):
         for i, image in enumerate(images):
             prompt = prompts[i]
             reward = rewards[i].item()
-            result[f"{prompt}__{reward:.5f}"] = image.unsqueeze(0).float()
+            result[f"{prompt}__{global_step}_{reward:.5f}"] = image.unsqueeze(0).float()
 
     accelerate_logger.log_images(
         result,
@@ -190,7 +182,7 @@ def load_scorer(config):
             reference_text2 = config["reference_text2"]
             scorer = DisparityScoreScorer(reference_text1=reference_text1,reference_text2=reference_text2,dtype=torch.float32)
         case _:
-            raise ValueError("Invalid scorer type. Choose 'text' or 'image'.")
+            raise ValueError("Invalid scorer type. Choose from 'text', 'image', 'random' or 'idscore'.")
     
     def scorer_fn(images, prompts, model):
         scores = scorer(images,prompts)
