@@ -148,7 +148,10 @@ def calculate_disparity_index(model_name, checkpoints: list[int], is_gender: boo
     for i, checkpoint in enumerate(checkpoints):
         print(f"{checkpoint} & ", end='')
         for di,m in disparity_indexes[i]:
-            print(f"${di:.3f}^{'+'if m else '-'}$ & ", end="")
+            if is_gender:
+                print(f"${di:.3f}^{'H'if m else 'M'}$ & ", end="")
+            else:
+                print(f"${di:.3f}^{'B'if m else 'N'}$ & ", end="")
         print(f"{sum(d for d,m in disparity_indexes[i])/len(disparity_indexes[i]):.3f} \\\\")
         
 
