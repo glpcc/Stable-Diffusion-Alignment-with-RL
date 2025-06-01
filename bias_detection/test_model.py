@@ -157,9 +157,9 @@ def calculate_disparity_index(model_name, checkpoints: list[int], is_gender: boo
 
 if __name__ == "__main__":
     # Example usage,
-    checkpoints = [1,3,5,7,10,15,40,52]
-    model_name = "idscore_woman_v3"
+    checkpoints = [1,3,5,10,15,28,40]
+    model_name = "idscore_1"
     checkpoint_folder = f"C:\\Users\\gonza\\Documents\\tfg\\TFG_testing_code\\training\\runs\\{model_name}\\save\\checkpoints/"
     test_model(model_name, checkpoints, checkpoint_folder)
     # generate_plots(model_name, checkpoints)
-    calculate_disparity_index(model_name,checkpoints, is_gender=True)  
+    calculate_disparity_index(model_name,checkpoints, is_gender=False)  
