@@ -1,5 +1,5 @@
 import pathlib
-from transformers import CLIPModel, CLIPProcessor
+from transformers import CLIPModel, CLIPProcessor, AutoTokenizer
 import torch
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -17,7 +17,7 @@ def get_clip_image_embedding(image):
     inputs = processor(images=image, return_tensors="pt")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Move the inputs to the appropriate device (GPU or CPU)
-    inputs = {k: v.to(torch.float32).to(device) for k, v in inputs.items()}
+    inputs = {k: v.to(device) for k, v in inputs.items()}
     # Get the image features from the model
     image_features = clip.get_image_features(**inputs)
 
@@ -38,9 +38,9 @@ def get_clip_text_embedding(text: str):
     """
     # Load the CLIP model and processor
     processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
-
+    tokenizer = AutoTokenizer.from_pretrained("openai/clip-vit-large-patch14")
     # Preprocess the text
-    inputs = processor(text=text, return_tensors="pt")
+    inputs = tokenizer(text=text, return_tensors="pt")
     inputs.to(device)
     # Get the text features from the model
     text_features = clip.get_text_features(**inputs)
@@ -53,8 +53,8 @@ def get_clip_text_embedding(text: str):
 
 if __name__ == "__main__":
     # Plot the images with the similarity score to the testing test
-    test_image_folder = pathlib.Path(__file__).parent.resolve() / "testing_images"
-    test_text = "A doctor"
+    test_image_folder = pathlib.Path(__file__).parent.resolve() / "testing_images2"
+    test_text = "A glass of water"
     all_images = list(test_image_folder.iterdir())
     all_images = [Image.open(image_path) for image_path in all_images]
     all_images_embeddings = get_clip_image_embedding(all_images)
